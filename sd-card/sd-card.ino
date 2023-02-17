@@ -14,7 +14,7 @@ if(!SD.begin(SD_ChipSelectPin))
   Serial.println("SD fail");
   return;
 }
-tmrpcm.setVolume(1);
+tmrpcm.setVolume(4);
 tmrpcm.play("techno.wav");
 
 }
