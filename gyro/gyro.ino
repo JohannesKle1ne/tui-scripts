@@ -15,7 +15,7 @@ char* convert_int16_to_str(int16_t i) {  // converts int16 to string. Moreover, 
 
 bool check(int side[3], int x, int y, int z) {
 
-  int tolerance = 500;
+  int tolerance = 1000;
 
   if (abs(side[0] - x) < tolerance && abs(side[1] - y) < tolerance && abs(side[2] - z) < tolerance) {
     return true;
@@ -95,6 +95,7 @@ void loop() {
       }
     }
     if(!resultTesting && !result8 && !result7){
+      Serial.println("Stop playing");
       noTone(speaker);
       currentPlayingSide = 0;
     }
