@@ -23,9 +23,14 @@ int speaker = 7;
 int tolerance = 5000;
 
 int side1[3] = { 0, 0, 15000 };
-int side2[3] = { 0, 0, -15000 };
-int side3[3] = { 0, 15000, 0 };
-int side4[3] = { 0, -15000, 0 };
+int side2[3] = { -500, -15000, 4000 };
+int side3[3] = { -13000, -6000, -6000 };
+int side4[3] = { -12000, 9000, 4000 };
+int side5[3] = { 700, -300, -18000 };
+int side6[3] = { 13000, -8860, -6200 };
+int side7[3] = { 1800, 15000, -6840 };
+int side8[3] = { 14000, 6900, 4500 };
+
 
 bool checkSide(int side[3], int x, int y, int z) {
   if (abs(side[0] - x) < tolerance && abs(side[1] - y) < tolerance && abs(side[2] - z) < tolerance) {
@@ -35,17 +40,29 @@ bool checkSide(int side[3], int x, int y, int z) {
 }
 
 int getCurrentSide(int x, int y, int z) {
-  if (checkSide(side1, x, y, z)){
+  if (checkSide(side1, x, y, z)) {
     return 1;
   }
-  if (checkSide(side2, x, y, z)){
+  if (checkSide(side2, x, y, z)) {
     return 2;
   }
-  if (checkSide(side3, x, y, z)){
+  if (checkSide(side3, x, y, z)) {
     return 3;
   }
-  if (checkSide(side4, x, y, z)){
+  if (checkSide(side4, x, y, z)) {
     return 4;
+  }
+  if (checkSide(side5, x, y, z)) {
+    return 5;
+  }
+  if (checkSide(side6, x, y, z)) {
+    return 6;
+  }
+  if (checkSide(side7, x, y, z)) {
+    return 7;
+  }
+  if (checkSide(side8, x, y, z)) {
+    return 8;
   }
   return 0;
 }
@@ -96,13 +113,17 @@ void loop() {
   gyro_z = Wire.read() << 8 | Wire.read();  // reading registers: 0x47 (GYRO_ZOUT_H) and 0x48 (GYRO_ZOUT_L)
 
 
+  Serial.print("Running: ");
+  Serial.println(running);
+
+
   if (running) {
-    
+
     //gets the current side number
     int sideNumber = getCurrentSide(accelerometer_x, accelerometer_y, accelerometer_z);
 
     //Check for side 1
-    if (sideNumber==1) {
+    if (sideNumber == 1) {
       if (currentPlayingSide != sideNumber) {
         Serial.print("Play Music for Side: ");
         Serial.println(sideNumber);
@@ -112,7 +133,7 @@ void loop() {
     }
 
     //Check for side 2
-    if (sideNumber==2) {
+    if (sideNumber == 2) {
       if (currentPlayingSide != sideNumber) {
         Serial.print("Play Music for Side: ");
         Serial.println(sideNumber);
@@ -122,7 +143,7 @@ void loop() {
     }
 
     //Check for side 3
-    if (sideNumber==3) {
+    if (sideNumber == 3) {
       if (currentPlayingSide != sideNumber) {
         Serial.print("Play Music for Side: ");
         Serial.println(sideNumber);
@@ -131,8 +152,8 @@ void loop() {
       }
     }
 
-        //Check for side 4
-    if (sideNumber==4) {
+    //Check for side 4
+    if (sideNumber == 4) {
       if (currentPlayingSide != sideNumber) {
         Serial.print("Play Music for Side: ");
         Serial.println(sideNumber);
@@ -141,8 +162,45 @@ void loop() {
       }
     }
 
+    if (sideNumber == 5) {
+      if (currentPlayingSide != sideNumber) {
+        Serial.print("Play Music for Side: ");
+        Serial.println(sideNumber);
+        tmrpcm.play("pr1.wav");
+        currentPlayingSide = sideNumber;
+      }
+    }
+
+    if (sideNumber == 6) {
+      if (currentPlayingSide != sideNumber) {
+        Serial.print("Play Music for Side: ");
+        Serial.println(sideNumber);
+        tmrpcm.play("so1.wav");
+        currentPlayingSide = sideNumber;
+      }
+    }
+
+    if (sideNumber == 7) {
+      if (currentPlayingSide != sideNumber) {
+        Serial.print("Play Music for Side: ");
+        Serial.println(sideNumber);
+        tmrpcm.play("cr1.wav");
+        currentPlayingSide = sideNumber;
+      }
+    }
+
+    if (sideNumber == 8) {
+      if (currentPlayingSide != sideNumber) {
+        Serial.print("Play Music for Side: ");
+        Serial.println(sideNumber);
+        tmrpcm.play("mi1.wav");
+        currentPlayingSide = sideNumber;
+      }
+    }
+
+
     //if no side could be identified stop the Music
-    if (sideNumber==0) {
+    if (sideNumber == 0) {
       Serial.println("Stop playing");
       tmrpcm.disable();
       noTone(speaker);
@@ -155,8 +213,8 @@ void loop() {
 
 
   if (abs(gyro_y) > 10000 || abs(gyro_z) > 10000) {
-    //Serial.println("Stop/Start Music");
-    //running = !running;
+    Serial.println("Stop/Start Music");
+    running = !running;
   }
 
 
@@ -226,40 +284,39 @@ void loop() {
 
 
 //Serial.println("Running");
-    //bool resultTesting = check(sideTesting, accelerometer_x, accelerometer_y, accelerometer_z);
+//bool resultTesting = check(sideTesting, accelerometer_x, accelerometer_y, accelerometer_z);
 
-    // if (resultTesting) {
-    //   Serial.println("Found Test");
-    //   delay(1000);
-    //   bool newResult = check(sideTesting, accelerometer_x, accelerometer_y, accelerometer_z);
-    //   if (newResult && currentPlayingSide != 9) {
-    //     Serial.println("Play Music for Side 9 (Test)");
-    //     tmrpcm.play("test.wav");
-    //     //tone(speaker, 1000);
-    //     currentPlayingSide = 9;
-    //   }
-    // }
-    // if (result7) {
-    //   handleSide(7, side7, "creative");
-    // }
-    // if (result7) {
-    //   Serial.println("Found 7");
-    //   delay(1000);
-    //   bool newResult = check(side7, accelerometer_x, accelerometer_y, accelerometer_z);
-    //   if (newResult && currentPlayingSide != 7) {
-    //     Serial.println("Play Music for Side 7");
-    //     tmrpcm.play(getSong("relaxed"));
-    //     currentPlayingSide = 7;
-    //   }
-    // }
-    // if (result6) {
-    //   Serial.println("Found 6");
-    //   delay(1000);
-    //   bool newResult = check(side6, accelerometer_x, accelerometer_y, accelerometer_z);
-    //   if (newResult && currentPlayingSide != 6) {
-    //     Serial.println("Play Music for Side 7");
-    //     tmrpcm.play(getSong("relaxed"));
-    //     currentPlayingSide = 7;
-    //   }
-    // }
-
+// if (resultTesting) {
+//   Serial.println("Found Test");
+//   delay(1000);
+//   bool newResult = check(sideTesting, accelerometer_x, accelerometer_y, accelerometer_z);
+//   if (newResult && currentPlayingSide != 9) {
+//     Serial.println("Play Music for Side 9 (Test)");
+//     tmrpcm.play("test.wav");
+//     //tone(speaker, 1000);
+//     currentPlayingSide = 9;
+//   }
+// }
+// if (result7) {
+//   handleSide(7, side7, "creative");
+// }
+// if (result7) {
+//   Serial.println("Found 7");
+//   delay(1000);
+//   bool newResult = check(side7, accelerometer_x, accelerometer_y, accelerometer_z);
+//   if (newResult && currentPlayingSide != 7) {
+//     Serial.println("Play Music for Side 7");
+//     tmrpcm.play(getSong("relaxed"));
+//     currentPlayingSide = 7;
+//   }
+// }
+// if (result6) {
+//   Serial.println("Found 6");
+//   delay(1000);
+//   bool newResult = check(side6, accelerometer_x, accelerometer_y, accelerometer_z);
+//   if (newResult && currentPlayingSide != 6) {
+//     Serial.println("Play Music for Side 7");
+//     tmrpcm.play(getSong("relaxed"));
+//     currentPlayingSide = 7;
+//   }
+// }
