@@ -67,6 +67,60 @@ int getCurrentSide(int x, int y, int z) {
   return 0;
 }
 
+
+int getDistance(int side[3], int x, int y, int z) {
+ return sqrt(pow(side[0] - x, 2) + pow(side[1] - y, 2) + pow(side[2] - z, 2));
+}
+
+int getCurrentSideNew(int x, int y, int z) {
+    int foundSide = 0;
+    int smallestDistance = tolerance;
+    int currentDistance;
+    
+    currentDistance = getDistance(side1, x, y, z);
+    if (currentDistance<smallestDistance) {
+        foundSide = 1;
+        smallestDistance = currentDistance;
+    }
+    currentDistance = getDistance(side2, x, y, z);
+    if (currentDistance<smallestDistance) {
+        foundSide = 2;
+        smallestDistance = currentDistance;
+    }
+    currentDistance = getDistance(side3, x, y, z);
+    if (currentDistance<smallestDistance) {
+        foundSide = 3;
+        smallestDistance = currentDistance;
+    }
+    currentDistance = getDistance(side4, x, y, z);
+    if (currentDistance<smallestDistance) {
+        foundSide = 4;
+        smallestDistance = currentDistance;
+    }
+    currentDistance = getDistance(side5, x, y, z);
+    if (currentDistance<smallestDistance) {
+        foundSide = 5;
+        smallestDistance = currentDistance;
+    }
+    currentDistance = getDistance(side6, x, y, z);
+    if (currentDistance<smallestDistance) {
+        foundSide = 6;
+        smallestDistance = currentDistance;
+    }
+    currentDistance = getDistance(side7, x, y, z);
+    if (currentDistance<smallestDistance) {
+        foundSide = 7;
+        smallestDistance = currentDistance;
+    }
+    currentDistance = getDistance(side8, x, y, z);
+    if (currentDistance<smallestDistance) {
+        foundSide = 8;
+        smallestDistance = currentDistance;
+    }
+    Serial.println(smallestDistance);
+    return foundSide;
+}
+
 char* convert_int16_to_str(int16_t i) {  // converts int16 to string. Moreover, resulting strings will have the same length in the debug monitor.
   sprintf(tmp_str, "%6d", i);
   return tmp_str;
@@ -120,7 +174,7 @@ void loop() {
   if (running) {
 
     //gets the current side number
-    int sideNumber = getCurrentSide(accelerometer_x, accelerometer_y, accelerometer_z);
+    int sideNumber = getCurrentSideNew(accelerometer_x, accelerometer_y, accelerometer_z);
 
     //Check for side 1
     if (sideNumber == 1) {
@@ -203,18 +257,23 @@ void loop() {
     if (sideNumber == 0) {
       Serial.println("Stop playing");
       tmrpcm.disable();
-      noTone(speaker);
+      //noTone(speaker);
       currentPlayingSide = 0;
     }
   } else {
-    noTone(speaker);
+    tmrpcm.disable();
+    //noTone(speaker);
     currentPlayingSide = 0;
   }
 
 
-  if (abs(gyro_y) > 10000 || abs(gyro_z) > 10000) {
-    Serial.println("Stop/Start Music");
-    running = !running;
+  if (abs(gyro_y) > 5000 || abs(gyro_z) > 5000) {
+    // Serial.println("Stop/Start Music");
+    // tmrpcm.play("pr1.wav");
+    // delay(1000);
+    // tmrpcm.disable();
+    // Serial.println("waited");
+    // running = !running;
   }
 
 
