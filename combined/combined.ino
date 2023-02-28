@@ -24,14 +24,17 @@ int tolerance = 10000;
 
 int sideNumber;
 
+int storage[3] = { 0, 0, 0 };
+int storageIndex = 0;
+
 int side8[3] = { -15000, 0, -1000 };
 int side7[3] = { -5000, -7000, -14000 };
 int side4[3] = { 5000, -15000, -500 };
 int side1[3] = { -5000, -7300, 10500 };
-int side6[3] = { -4500,15500,-1500 };
-int side5[3] = { 6200,7300,-14000 };
-int side3[3] = { 15000,0,0 };
-int side2[3] = { 5700,8000,12000 };
+int side6[3] = { -4500, 15500, -1500 };
+int side5[3] = { 6200, 7300, -14000 };
+int side3[3] = { 15000, 0, 0 };
+int side2[3] = { 5700, 8000, 12000 };
 
 
 
@@ -75,56 +78,56 @@ int getCurrentSide(int x, int y, int z) {
 
 
 int getDistance(int side[3], int x, int y, int z) {
- return sqrt(pow(side[0] - x, 2) + pow(side[1] - y, 2) + pow(side[2] - z, 2));
+  return sqrt(pow(side[0] - x, 2) + pow(side[1] - y, 2) + pow(side[2] - z, 2));
 }
 
 int getCurrentSideNew(int x, int y, int z) {
-    int foundSide = 0;
-    int smallestDistance = tolerance;
-    int currentDistance;
-    
-    currentDistance = getDistance(side1, x, y, z);
-    if (currentDistance<smallestDistance) {
-        foundSide = 1;
-        smallestDistance = currentDistance;
-    }
-    currentDistance = getDistance(side2, x, y, z);
-    if (currentDistance<smallestDistance) {
-        foundSide = 2;
-        smallestDistance = currentDistance;
-    }
-    currentDistance = getDistance(side3, x, y, z);
-    if (currentDistance<smallestDistance) {
-        foundSide = 3;
-        smallestDistance = currentDistance;
-    }
-    currentDistance = getDistance(side4, x, y, z);
-    if (currentDistance<smallestDistance) {
-        foundSide = 4;
-        smallestDistance = currentDistance;
-    }
-    currentDistance = getDistance(side5, x, y, z);
-    if (currentDistance<smallestDistance) {
-        foundSide = 5;
-        smallestDistance = currentDistance;
-    }
-    currentDistance = getDistance(side6, x, y, z);
-    if (currentDistance<smallestDistance) {
-        foundSide = 6;
-        smallestDistance = currentDistance;
-    }
-    currentDistance = getDistance(side7, x, y, z);
-    if (currentDistance<smallestDistance) {
-        foundSide = 7;
-        smallestDistance = currentDistance;
-    }
-    currentDistance = getDistance(side8, x, y, z);
-    if (currentDistance<smallestDistance) {
-        foundSide = 8;
-        smallestDistance = currentDistance;
-    }
-    Serial.println(smallestDistance);
-    return foundSide;
+  int foundSide = 0;
+  int smallestDistance = tolerance;
+  int currentDistance;
+
+  currentDistance = getDistance(side1, x, y, z);
+  if (currentDistance < smallestDistance) {
+    foundSide = 1;
+    smallestDistance = currentDistance;
+  }
+  currentDistance = getDistance(side2, x, y, z);
+  if (currentDistance < smallestDistance) {
+    foundSide = 2;
+    smallestDistance = currentDistance;
+  }
+  currentDistance = getDistance(side3, x, y, z);
+  if (currentDistance < smallestDistance) {
+    foundSide = 3;
+    smallestDistance = currentDistance;
+  }
+  currentDistance = getDistance(side4, x, y, z);
+  if (currentDistance < smallestDistance) {
+    foundSide = 4;
+    smallestDistance = currentDistance;
+  }
+  currentDistance = getDistance(side5, x, y, z);
+  if (currentDistance < smallestDistance) {
+    foundSide = 5;
+    smallestDistance = currentDistance;
+  }
+  currentDistance = getDistance(side6, x, y, z);
+  if (currentDistance < smallestDistance) {
+    foundSide = 6;
+    smallestDistance = currentDistance;
+  }
+  currentDistance = getDistance(side7, x, y, z);
+  if (currentDistance < smallestDistance) {
+    foundSide = 7;
+    smallestDistance = currentDistance;
+  }
+  currentDistance = getDistance(side8, x, y, z);
+  if (currentDistance < smallestDistance) {
+    foundSide = 8;
+    smallestDistance = currentDistance;
+  }
+  //Serial.println(smallestDistance);
+  return foundSide;
 }
 
 char* convert_int16_to_str(int16_t i) {  // converts int16 to string. Moreover, resulting strings will have the same length in the debug monitor.
@@ -133,10 +136,34 @@ char* convert_int16_to_str(int16_t i) {  // converts int16 to string. Moreover, 
 }
 
 
+void updateAcc() {
+  accelerometer_x = Wire.read() << 8 | Wire.read();  // reading registers: 0x3B (ACCEL_XOUT_H) and 0x3C (ACCEL_XOUT_L)
+  accelerometer_y = Wire.read() << 8 | Wire.read();  // reading registers: 0x3D (ACCEL_YOUT_H) and 0x3E (ACCEL_YOUT_L)
+  accelerometer_z = Wire.read() << 8 | Wire.read();  // reading registers: 0x3F (ACCEL_ZOUT_H) and 0x40 (ACCEL_ZOUT_L)
+}
+
+void updateSideNumber() {
+  sideNumber = getCurrentSideNew(accelerometer_x, accelerometer_y, accelerometer_z);
+  storage[storageIndex] = sideNumber;
+  int length = sizeof(storage) / sizeof(storage[0]);
+  storageIndex = (storageIndex + 1) % length;
+  Serial.println(sideNumber);
+}
+
+bool checkSide(int side) {
+  bool isFound = true;
+  int length = sizeof(storage) / sizeof(storage[0]);
+  for (int i = 0; i < length; i++) {
+    if (storage[i] != side) {
+      isFound = false;
+    }
+  }
+  return isFound;
+}
+
 
 
 void setup() {
-
   tmrpcm.speakerPin = 9;
   Serial.begin(9600);
   if (!SD.begin(SD_ChipSelectPin)) {
@@ -144,8 +171,6 @@ void setup() {
     return;
   }
   tmrpcm.setVolume(1);
-
-
 
   Serial.begin(9600);
   Wire.begin();
@@ -155,16 +180,6 @@ void setup() {
   Wire.endTransmission(true);
 
   pinMode(speaker, OUTPUT);
-}
-
-void updateAcc(){
-  accelerometer_x = Wire.read() << 8 | Wire.read();  // reading registers: 0x3B (ACCEL_XOUT_H) and 0x3C (ACCEL_XOUT_L)
-  accelerometer_y = Wire.read() << 8 | Wire.read();  // reading registers: 0x3D (ACCEL_YOUT_H) and 0x3E (ACCEL_YOUT_L)
-  accelerometer_z = Wire.read() << 8 | Wire.read();  // reading registers: 0x3F (ACCEL_ZOUT_H) and 0x40 (ACCEL_ZOUT_L)
-}
-
-void updateSideNumber(){
-    sideNumber = getCurrentSideNew(accelerometer_x, accelerometer_y, accelerometer_z);
 }
 
 void loop() {
@@ -181,8 +196,8 @@ void loop() {
   gyro_z = Wire.read() << 8 | Wire.read();  // reading registers: 0x47 (GYRO_ZOUT_H) and 0x48 (GYRO_ZOUT_L)
 
 
-  Serial.print("Running: ");
-  Serial.println(running);
+  //Serial.print("Running: ");
+  //Serial.println(running);
 
 
   if (running) {
@@ -191,84 +206,72 @@ void loop() {
 
 
     //Check for side 1
-    if (sideNumber == 1) {
+    if (checkSide(1)) {
       if (currentPlayingSide != sideNumber) {
-        Serial.print("Play Music for Side: ");
-        Serial.println(sideNumber);
         tmrpcm.play("mi1.wav");
         currentPlayingSide = sideNumber;
       }
     }
 
     //Check for side 2
-    if (sideNumber == 2) {
+    if (checkSide(2)) {
       if (currentPlayingSide != sideNumber) {
-        Serial.print("Play Music for Side: ");
-        Serial.println(sideNumber);
         tmrpcm.play("am1.wav");
         currentPlayingSide = sideNumber;
       }
     }
 
     //Check for side 3
-    if (sideNumber == 3) {
+    if (checkSide(3)) {
       if (currentPlayingSide != sideNumber) {
-        Serial.print("Play Music for Side: ");
-        Serial.println(sideNumber);
         tmrpcm.play("co1.wav");
         currentPlayingSide = sideNumber;
       }
     }
 
     //Check for side 4
-    if (sideNumber == 4) {
+    if (checkSide(4)) {
       if (currentPlayingSide != sideNumber) {
-        Serial.print("Play Music for Side: ");
-        Serial.println(sideNumber);
         tmrpcm.play("re1.wav");
         currentPlayingSide = sideNumber;
       }
     }
 
-    if (sideNumber == 5) {
+    if (checkSide(5)) {
       if (currentPlayingSide != sideNumber) {
-        Serial.print("Play Music for Side: ");
-        Serial.println(sideNumber);
         tmrpcm.play("pr1.wav");
         currentPlayingSide = sideNumber;
       }
     }
 
-    if (sideNumber == 6) {
+    if (checkSide(6)) {
       if (currentPlayingSide != sideNumber) {
-        Serial.print("Play Music for Side: ");
-        Serial.println(sideNumber);
         tmrpcm.play("so1.wav");
         currentPlayingSide = sideNumber;
       }
     }
 
-    if (sideNumber == 7) {
+    if (checkSide(7)) {
       if (currentPlayingSide != sideNumber) {
-        Serial.print("Play Music for Side: ");
-        Serial.println(sideNumber);
         tmrpcm.play("cr1.wav");
         currentPlayingSide = sideNumber;
       }
     }
 
-    if (sideNumber == 8) {
+    if (checkSide(8)) {
       if (currentPlayingSide != sideNumber) {
-        Serial.print("Play Music for Side: ");
-        Serial.println(sideNumber);
         tmrpcm.play("ac1.wav");
         currentPlayingSide = sideNumber;
       }
     }
 
 
-    //if no side could be identified stop the Music
-    if (sideNumber == 0) {
+
+    if (checkSide(1) || checkSide(2) || checkSide(3) || checkSide(4) || checkSide(5) || checkSide(6) || checkSide(7) || checkSide(8)) {
+      Serial.print("Play Music for Side: ");
+      Serial.println(sideNumber);
+    } else {
+      //if no side could be identified stop the Music
       Serial.println("No Side playing");
       tmrpcm.disable();
       //noTone(speaker);
@@ -282,7 +285,7 @@ void loop() {
 
 
   if (abs(gyro_y) + abs(gyro_z) > 10000) {
-    
+
     // if(!running){
     //   Serial.println("Start Music");
     //   tmrpcm.play("pr1.wav");
