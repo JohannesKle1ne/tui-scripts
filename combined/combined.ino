@@ -20,16 +20,22 @@ bool running = true;
 
 int speaker = 7;
 
-int tolerance = 5000;
+int tolerance = 10000;
 
-int side1[3] = { 0, 0, 15000 };
-int side2[3] = { -500, -15000, 4000 };
-int side3[3] = { -13000, -6000, -6000 };
-int side4[3] = { -12000, 9000, 4000 };
-int side5[3] = { 700, -300, -18000 };
-int side6[3] = { 13000, -8860, -6200 };
-int side7[3] = { 1800, 15000, -6840 };
-int side8[3] = { 14000, 6900, 4500 };
+int sideNumber;
+
+int side8[3] = { -15000, 0, -1000 };
+int side7[3] = { -5000, -7000, -14000 };
+int side4[3] = { 5000, -15000, -500 };
+int side1[3] = { -5000, -7300, 10500 };
+int side6[3] = { -4500,15500,-1500 };
+int side5[3] = { 6200,7300,-14000 };
+int side3[3] = { 15000,0,0 };
+int side2[3] = { 5700,8000,12000 };
+
+
+
+
 
 
 bool checkSide(int side[3], int x, int y, int z) {
@@ -151,6 +157,16 @@ void setup() {
   pinMode(speaker, OUTPUT);
 }
 
+void updateAcc(){
+  accelerometer_x = Wire.read() << 8 | Wire.read();  // reading registers: 0x3B (ACCEL_XOUT_H) and 0x3C (ACCEL_XOUT_L)
+  accelerometer_y = Wire.read() << 8 | Wire.read();  // reading registers: 0x3D (ACCEL_YOUT_H) and 0x3E (ACCEL_YOUT_L)
+  accelerometer_z = Wire.read() << 8 | Wire.read();  // reading registers: 0x3F (ACCEL_ZOUT_H) and 0x40 (ACCEL_ZOUT_L)
+}
+
+void updateSideNumber(){
+    sideNumber = getCurrentSideNew(accelerometer_x, accelerometer_y, accelerometer_z);
+}
+
 void loop() {
   Wire.beginTransmission(MPU_ADDR);
   Wire.write(0x3B);                         // starting with register 0x3B (ACCEL_XOUT_H) [MPU-6000 and MPU-6050 Register Map and Descriptions Revision 4.2, p.40]
@@ -158,9 +174,7 @@ void loop() {
   Wire.requestFrom(MPU_ADDR, 7 * 2, true);  // request a total of 7*2=14 registers
 
   // "Wire.read()<<8 | Wire.read();" means two registers are read and stored in the same variable
-  accelerometer_x = Wire.read() << 8 | Wire.read();  // reading registers: 0x3B (ACCEL_XOUT_H) and 0x3C (ACCEL_XOUT_L)
-  accelerometer_y = Wire.read() << 8 | Wire.read();  // reading registers: 0x3D (ACCEL_YOUT_H) and 0x3E (ACCEL_YOUT_L)
-  accelerometer_z = Wire.read() << 8 | Wire.read();  // reading registers: 0x3F (ACCEL_ZOUT_H) and 0x40 (ACCEL_ZOUT_L)
+  updateAcc();
   //temperature = Wire.read()<<8 | Wire.read(); // reading registers: 0x41 (TEMP_OUT_H) and 0x42 (TEMP_OUT_L)
   gyro_x = Wire.read() << 8 | Wire.read();  // reading registers: 0x43 (GYRO_XOUT_H) and 0x44 (GYRO_XOUT_L)
   gyro_y = Wire.read() << 8 | Wire.read();  // reading registers: 0x45 (GYRO_YOUT_H) and 0x46 (GYRO_YOUT_L)
@@ -173,15 +187,15 @@ void loop() {
 
   if (running) {
 
-    //gets the current side number
-    int sideNumber = getCurrentSideNew(accelerometer_x, accelerometer_y, accelerometer_z);
+    updateSideNumber();
+
 
     //Check for side 1
     if (sideNumber == 1) {
       if (currentPlayingSide != sideNumber) {
         Serial.print("Play Music for Side: ");
         Serial.println(sideNumber);
-        tmrpcm.play("ac1.wav");
+        tmrpcm.play("mi1.wav");
         currentPlayingSide = sideNumber;
       }
     }
@@ -247,7 +261,7 @@ void loop() {
       if (currentPlayingSide != sideNumber) {
         Serial.print("Play Music for Side: ");
         Serial.println(sideNumber);
-        tmrpcm.play("mi1.wav");
+        tmrpcm.play("ac1.wav");
         currentPlayingSide = sideNumber;
       }
     }
@@ -255,7 +269,7 @@ void loop() {
 
     //if no side could be identified stop the Music
     if (sideNumber == 0) {
-      Serial.println("Stop playing");
+      Serial.println("No Side playing");
       tmrpcm.disable();
       //noTone(speaker);
       currentPlayingSide = 0;
@@ -267,13 +281,21 @@ void loop() {
   }
 
 
-  if (abs(gyro_y) > 5000 || abs(gyro_z) > 5000) {
-    // Serial.println("Stop/Start Music");
-    // tmrpcm.play("pr1.wav");
-    // delay(1000);
-    // tmrpcm.disable();
-    // Serial.println("waited");
-    // running = !running;
+  if (abs(gyro_y) + abs(gyro_z) > 10000) {
+    
+    // if(!running){
+    //   Serial.println("Start Music");
+    //   tmrpcm.play("pr1.wav");
+    //   delay(1000);
+    //   tmrpcm.disable();
+    //   running = true;
+    // }else{
+    //   Serial.println("Stop Music");
+    //   tmrpcm.play("pr1.wav");
+    //   delay(1000);
+    //   tmrpcm.disable();
+    //   running = false;
+    // }
   }
 
 
