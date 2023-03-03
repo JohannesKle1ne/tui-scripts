@@ -20,12 +20,15 @@ bool running = true;
 
 int speaker = 7;
 
-int tolerance = 10000;
+int tolerance = 100000;
 
 int sideNumber;
 
 int storage[3] = { 0, 0, 0 };
 int storageIndex = 0;
+
+int shakeStorage[3] = { 0, 0 };
+int shakeStorageIndex = 0;
 
 int side8[3] = { -15000, 0, -1000 };
 int side7[3] = { -5000, -7000, -14000 };
@@ -78,7 +81,11 @@ int getCurrentSide(int x, int y, int z) {
 
 
 int getDistance(int side[3], int x, int y, int z) {
-  return sqrt(pow(side[0] - x, 2) + pow(side[1] - y, 2) + pow(side[2] - z, 2));
+  int dist = sqrt(pow(side[0] - x, 2) + pow(side[1] - y, 2) + pow(side[2] - z, 2));
+  //Serial.println(dist);
+  //Serial.println(pow(side[0] - x, 2) + pow(side[1] - y, 2) + pow(side[2] - z, 2));
+
+  return abs(dist);
 }
 
 int getCurrentSideNew(int x, int y, int z) {
@@ -86,11 +93,23 @@ int getCurrentSideNew(int x, int y, int z) {
   int smallestDistance = tolerance;
   int currentDistance;
 
+  // Serial.println("Before:");
+  // Serial.println(smallestDistance);
+
+
+
+  // if (currentDistance < smallestDistance) {
+  //   foundSide = 1;
+  //   smallestDistance = currentDistance;
+  // }
+
+  //Side one is the default, if
   currentDistance = getDistance(side1, x, y, z);
-  if (currentDistance < smallestDistance) {
-    foundSide = 1;
-    smallestDistance = currentDistance;
-  }
+  foundSide = 1;
+  smallestDistance = currentDistance;
+  // Serial.println("After:");
+  // Serial.println(smallestDistance);
+
   currentDistance = getDistance(side2, x, y, z);
   if (currentDistance < smallestDistance) {
     foundSide = 2;
@@ -140,6 +159,11 @@ void updateAcc() {
   accelerometer_x = Wire.read() << 8 | Wire.read();  // reading registers: 0x3B (ACCEL_XOUT_H) and 0x3C (ACCEL_XOUT_L)
   accelerometer_y = Wire.read() << 8 | Wire.read();  // reading registers: 0x3D (ACCEL_YOUT_H) and 0x3E (ACCEL_YOUT_L)
   accelerometer_z = Wire.read() << 8 | Wire.read();  // reading registers: 0x3F (ACCEL_ZOUT_H) and 0x40 (ACCEL_ZOUT_L)
+
+  //temperature = Wire.read()<<8 | Wire.read(); // reading registers: 0x41 (TEMP_OUT_H) and 0x42 (TEMP_OUT_L)
+  gyro_x = Wire.read() << 8 | Wire.read();  // reading registers: 0x43 (GYRO_XOUT_H) and 0x44 (GYRO_XOUT_L)
+  gyro_y = Wire.read() << 8 | Wire.read();  // reading registers: 0x45 (GYRO_YOUT_H) and 0x46 (GYRO_YOUT_L)
+  gyro_z = Wire.read() << 8 | Wire.read();  // reading registers: 0x47 (GYRO_ZOUT_H) and 0x48 (GYRO_ZOUT_L)
 }
 
 void updateSideNumber() {
@@ -161,16 +185,38 @@ bool checkSide(int side) {
   return isFound;
 }
 
+void updateShake(int isShake) {
+  shakeStorage[shakeStorageIndex] = isShake;
+  int length = sizeof(shakeStorage) / sizeof(shakeStorage[0]);
+  shakeStorageIndex = (shakeStorageIndex + 1) % length;
+  //Serial.println("isShake:");
+  //Serial.println(isShake);
+}
+
+
+
+bool checkShake() {
+  bool isFound = true;
+  int length = sizeof(shakeStorage) / sizeof(shakeStorage[0]);
+  for (int i = 0; i < length; i++) {
+    if (shakeStorage[i] == 0) {
+      isFound = false;
+    }
+  }
+  return isFound;
+}
+
 
 
 void setup() {
   tmrpcm.speakerPin = 9;
   Serial.begin(9600);
+  Serial.println("Started");
   if (!SD.begin(SD_ChipSelectPin)) {
     Serial.println("SD fail");
     return;
   }
-  tmrpcm.setVolume(1);
+  tmrpcm.setVolume(3);
 
   Serial.begin(9600);
   Wire.begin();
@@ -190,14 +236,14 @@ void loop() {
 
   // "Wire.read()<<8 | Wire.read();" means two registers are read and stored in the same variable
   updateAcc();
-  //temperature = Wire.read()<<8 | Wire.read(); // reading registers: 0x41 (TEMP_OUT_H) and 0x42 (TEMP_OUT_L)
-  gyro_x = Wire.read() << 8 | Wire.read();  // reading registers: 0x43 (GYRO_XOUT_H) and 0x44 (GYRO_XOUT_L)
-  gyro_y = Wire.read() << 8 | Wire.read();  // reading registers: 0x45 (GYRO_YOUT_H) and 0x46 (GYRO_YOUT_L)
-  gyro_z = Wire.read() << 8 | Wire.read();  // reading registers: 0x47 (GYRO_ZOUT_H) and 0x48 (GYRO_ZOUT_L)
+
 
 
   //Serial.print("Running: ");
   //Serial.println(running);
+
+  int rand = random(1, 3);
+  Serial.println(rand);
 
 
   if (running) {
@@ -205,10 +251,13 @@ void loop() {
     updateSideNumber();
 
 
-    //Check for side 1
     if (checkSide(1)) {
       if (currentPlayingSide != sideNumber) {
-        tmrpcm.play("mi1.wav");
+        if (rand == 1) {
+          tmrpcm.play("re1.wav");
+        } else {
+          tmrpcm.play("re2.wav");
+        }
         currentPlayingSide = sideNumber;
       }
     }
@@ -216,7 +265,11 @@ void loop() {
     //Check for side 2
     if (checkSide(2)) {
       if (currentPlayingSide != sideNumber) {
-        tmrpcm.play("am1.wav");
+        if (rand == 1) {
+          tmrpcm.play("so1.wav");
+        } else {
+          tmrpcm.play("so2.wav");
+        }
         currentPlayingSide = sideNumber;
       }
     }
@@ -224,7 +277,11 @@ void loop() {
     //Check for side 3
     if (checkSide(3)) {
       if (currentPlayingSide != sideNumber) {
-        tmrpcm.play("co1.wav");
+        if (rand == 1) {
+          tmrpcm.play("co1.wav");
+        } else {
+          tmrpcm.play("co2.wav");
+        }
         currentPlayingSide = sideNumber;
       }
     }
@@ -232,35 +289,58 @@ void loop() {
     //Check for side 4
     if (checkSide(4)) {
       if (currentPlayingSide != sideNumber) {
-        tmrpcm.play("re1.wav");
+        if (rand == 1) {
+          tmrpcm.play("pr1.wav");
+        } else {
+          tmrpcm.play("pr2.wav");
+        }
+
         currentPlayingSide = sideNumber;
       }
     }
 
     if (checkSide(5)) {
       if (currentPlayingSide != sideNumber) {
-        tmrpcm.play("pr1.wav");
+        if (rand == 1) {
+          tmrpcm.play("ac1.wav");
+        } else {
+          tmrpcm.play("ac2.wav");
+        }
         currentPlayingSide = sideNumber;
       }
     }
 
     if (checkSide(6)) {
       if (currentPlayingSide != sideNumber) {
-        tmrpcm.play("so1.wav");
+        // if (rand == 1) {
+        //   tmrpcm.play("am1.wav");
+        // } else {
+        //   tmrpcm.play("am2.wav");
+        // }
+
         currentPlayingSide = sideNumber;
       }
     }
 
     if (checkSide(7)) {
       if (currentPlayingSide != sideNumber) {
-        tmrpcm.play("cr1.wav");
+        if (rand == 1) {
+          tmrpcm.play("cr1.wav");
+        } else {
+          tmrpcm.play("cr2.wav");
+        }
         currentPlayingSide = sideNumber;
       }
     }
 
     if (checkSide(8)) {
       if (currentPlayingSide != sideNumber) {
-        tmrpcm.play("ac1.wav");
+        if (rand == 1) {
+          tmrpcm.play("mi1.wav");
+        } else {
+          tmrpcm.play("mi2.wav");
+        }
+
         currentPlayingSide = sideNumber;
       }
     }
@@ -285,21 +365,51 @@ void loop() {
 
 
   if (abs(gyro_y) + abs(gyro_z) > 10000) {
-
-    // if(!running){
-    //   Serial.println("Start Music");
-    //   tmrpcm.play("pr1.wav");
-    //   delay(1000);
-    //   tmrpcm.disable();
-    //   running = true;
-    // }else{
-    //   Serial.println("Stop Music");
-    //   tmrpcm.play("pr1.wav");
-    //   delay(1000);
-    //   tmrpcm.disable();
-    //   running = false;
+    Serial.println("Shake1");
+    //delay(1000);
+    //Serial.println("Shake2");
+    //updateAcc();
+    // if (abs(gyro_y) + abs(gyro_z) > 5000) {
+    //   if (!running) {
+    //     Serial.println("Start Music");
+    //     tmrpcm.play("start.wav");
+    //     delay(2000);
+    //     tmrpcm.disable();
+    //     running = true;
+    //   } else {
+    //     Serial.println("Stop Music");
+    //     tmrpcm.play("stop.wav");
+    //     delay(2000);
+    //     tmrpcm.disable();
+    //     running = false;
+    //   }
     // }
   }
+
+  // if (abs(gyro_y) + abs(gyro_z) > 5000) {
+  //   updateShake(1);
+  // } else {
+  //   updateShake(0);
+  // }
+
+  // if (checkShake()) {
+  //   Serial.println("SHAKE");
+  //   if (!running) {
+  //     Serial.println("Start Music");
+  //     tmrpcm.play("start.wav");
+  //     delay(2000);
+  //     tmrpcm.disable();
+  //     running = true;
+  //   } else {
+  //     Serial.println("Stop Music");
+  //     tmrpcm.play("stop.wav");
+  //     delay(2000);
+  //     tmrpcm.disable();
+  //     running = false;
+  //   }
+  // }
+
+
 
 
   // print out data
